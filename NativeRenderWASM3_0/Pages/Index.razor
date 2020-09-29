@@ -1,0 +1,96 @@
+﻿@page "/"
+
+@using NativeRenderWASM3_0;
+
+
+<button value="button" @onclick="AddNode">AddNode</button>
+<button value="button" @onclick="AddNode1">AddNode</button>
+<button value="button" @onclick="UpdateWidth">UpdateWidth</button>
+<button value="button" @onclick="Save">Save</button>
+<button value="button" @onclick="Load">Load</button>
+
+<Canvas @ref="@canvas" Width="1500" Height="700" Constraints="@DiagramConstraints.PageEditable">
+    @*<Node @ref="node" X="100" Y="100" Width="100" Height="100"></Node>*@
+</Canvas>
+
+@code{ 
+    float width = 100;
+    Canvas canvas;
+    Counter Counter;
+    string savedDiagram;
+    public void AddNode()
+    {
+        //Counter.width = 100001;
+        CustomNode customnode = new CustomNode()
+        {
+            X = 300,
+            Y = 100,
+            Width=100,
+            Height=100,
+            CustomWidth=1000,
+            Shapes = Shapes.Flow,
+            Annotations = new List<Annotation>()
+                {
+                    new Annotation(){Text="Node", X=10, Y=10},
+                    new Annotation(){Text="Node", X=10, Y=30},
+                }
+        };
+        this.canvas.Add(customnode);
+        Node node = new Node()
+        {
+            Width = 100,
+            Height = 100,
+            X = 300,
+            Y = 300,
+            Shapes = Shapes.HTML,
+            Annotations = new List<Annotation>()
+                {
+                    new Annotation(){Text="Node", X=10, Y=10},
+                    new Annotation(){Text="Node", X=10, Y=30},
+                }
+        };
+        this.canvas.Add(node);
+        StateHasChanged();
+    }
+    public void AddNode1()
+    {
+        this.canvas.Nodes = new List<Node>()
+            {
+                new Node()
+                {
+                    Width = 200,
+                    Height = 100,
+                    X = 300,
+                    Y = 400,
+                },
+                new Node()
+                {
+                    Width = 200,
+                    Height = 100,
+                    X = 100,
+                    Y = 400,
+                }
+            };
+        StateHasChanged();
+    }
+
+    public void UpdateWidth()
+    {
+        //node.Width = 200;
+        StateHasChanged();
+    }
+    public void Save()
+    {
+        savedDiagram = this.canvas.Save("..//..//canvas.txt");
+    }
+
+    public void Load()
+    {
+        this.canvas.Load(savedDiagram);
+    }
+
+    protected override void OnInitialized()
+    {
+        StateHasChanged();
+    }
+}

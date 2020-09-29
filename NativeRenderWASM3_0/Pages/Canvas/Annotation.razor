@@ -1,0 +1,141 @@
+﻿@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Web;
+@using System.Drawing;
+@using System.Text.Json.Serialization;
+@using System.ComponentModel;
+@using System.Collections.ObjectModel; 
+
+@inherits ComponentBase;
+@namespace NativeRenderWASM3_0
+
+<g id="annotation_element" xmlns="http://www.w3.org/2000/svg">
+    @*<rect id="node" x="@ParentX" y="@ParentY" width="@Width" height="@Height" fill="blue" stroke-width="5"></rect>*@ 
+    <text fill="white" visibility="visible" style="font-style: normal; font-weight: normal; font-size: 12px; font-family: Arial;">
+        <tspan x="@ParentX" y="@ParentY">@Text</tspan>
+    </text>
+</g>
+
+<CascadingValue Value="@this">
+    @ChildContent
+</CascadingValue>
+
+@code {
+
+
+    private string JSNamespace = "annotation";
+    private string JSProperty = string.Empty;
+    private bool _initialized;
+
+    [CascadingParameter]
+    internal Node BaseParent { get; set; }
+
+    [Parameter]
+    [JsonIgnore]
+    public RenderFragment ChildContent { get; set; }
+
+    private string ParentX;
+    private string ParentY;
+    private string textX;
+    private string textY;
+
+    [Parameter]
+    [JsonPropertyName("text")]
+    [DefaultValue(Shapes.Basic)]
+    public string Text
+    {
+        get
+        {
+            return _text;
+        }
+        set
+        {
+            _text = value;
+        }
+    }
+    private string _text;
+
+    [Parameter]
+    [JsonPropertyName("x")]
+    [DefaultValue(Shapes.Basic)]
+    public float X
+    {
+        get
+        {
+            return _x;
+        }
+        set
+        {
+            _x = value;
+            textX = value.ToString() + "px";
+            if (BaseParent != null)
+            {
+                ParentX = (BaseParent.X + value).ToString() + "px";
+            }
+        }
+    }
+    private float _x;
+
+    [Parameter]
+    [JsonPropertyName("y")]
+    [DefaultValue(Shapes.Basic)]
+    public float Y
+    {
+        get
+        {
+            return _y;
+        }
+        set
+        {
+            _y = value;
+            textY = value.ToString() + "px";
+            if (BaseParent != null)
+            {
+                ParentY = (BaseParent.Y + value).ToString() + "px";
+            }
+        }
+    }
+    private float _y;
+
+    [Parameter]
+    [JsonPropertyName("width")]
+    [DefaultValue(50)]
+    public float Width
+    {
+        get
+        {
+            return _width;
+        }
+        set
+        {
+            if (value != _width)
+            {
+                _width = value;
+                if (this.BaseParent != null)
+                    StateHasChanged();
+            }
+        }
+    }
+    private float _width = 50;
+    [Parameter]
+    [JsonPropertyName("height")]
+    [DefaultValue(50)]
+    public float Height
+    {
+        get { return _height; }
+        set
+        {
+            if (value != _height)
+            {
+                _height = value;
+                if (this.BaseParent != null)
+                    StateHasChanged();
+            }
+        }
+    }
+    private float _height = 50;
+
+    protected override void OnInitialized()
+    {
+        StateHasChanged();
+    }
+}

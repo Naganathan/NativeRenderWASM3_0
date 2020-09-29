@@ -1,0 +1,274 @@
+﻿@page "/canvas"
+
+@using System.ComponentModel
+@using System.Drawing;
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+
+@inherits ComponentBase;
+
+<h3>Canvas</h3>
+<div id="canvas_layer_div" @onclick="@OnClick" @onmousedown="@OnMouseDown" @onmousemove="@OnMouseMove" @onmouseup="@OnMouseUp" style="width: 100%;height: 700px;position:relative;width:100%; height:700px;position:relative;overflow:hidden;background:#ededed">
+    <svg id="canvas_layer_svg" width="@Width" height="@Height" xmlns="http://www.w3.org/2000/svg">
+        <g>
+            <g id="canvas_layer" style="pointer-events: all;" transform="translate(0,0),scale(1)">
+                @if (this.Nodes.Count > 0)
+                {
+                    @foreach (Node node in Nodes)
+                    {
+                        <Node X="@node.X" Y="@node.Y" Width="@node.Width" Height="@node.Height" Annotations="@node.Annotations">
+                        </Node>
+                    }
+                }
+            </g>
+        </g>
+    </svg>
+</div>
+<CascadingValue Value="@this">
+    @ChildContent
+</CascadingValue>
+
+@code 
+{ 
+    [Parameter]
+    [DefaultValue("100%")]
+    [JsonPropertyName("width")]
+    public float Width { get; set; }
+
+    [Parameter]
+    [DefaultValue("100%")]
+    [JsonPropertyName("height")]
+    public float Height { get; set; }
+
+    [Parameter]
+    [DefaultValue(DiagramConstraints.PageEditable)]
+    [JsonPropertyName("constraints")]
+    public DiagramConstraints Constraints
+    {
+        get
+        {
+            return _constraints;
+        }
+        set
+        {
+            _constraints = value;
+        }
+    }
+    private DiagramConstraints _constraints = DiagramConstraints.Default;
+
+    [Inject]
+    protected IJSRuntime jsRuntime { get; set; }
+
+
+    public Dictionary<string, object> BindableProperties { get; set; } = new Dictionary<string, object>();
+
+    [Parameter]
+    [JsonIgnore]
+    public RenderFragment ChildContent { get; set; }
+
+    public void OnClick(MouseEventArgs args)
+    {
+
+    }
+    int renderCount = 1000;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        Nodes = new List<Node>();
+        for (int i = 0; i < renderCount; i++)
+        {
+            Node node = new Node() { Id = "Node" + i.ToString(), X = 10 + i * 40, Y = (float)(260 + 290 * Math.Sin(Math.PI * i / 22.5)), Width = 70, Height = 70 };
+            if (i == 0 || i == 1)
+            {
+                node.Shapes = Shapes.HTML;
+            }
+            Nodes.Add(node);
+        }
+    }
+
+    private Node draggingNode = null;
+    public void OnMouseDown(MouseEventArgs args)
+    {
+        PointF mousePos = new PointF((float)(args.ClientX - 282), (float)(args.ClientY - 145));
+        //mousePos = ConvertClienttoModel(mousePos);
+        foreach (Node node in Nodes)
+        {
+            RectangleF rectangleF = new RectangleF(node.X, node.Y, node.Width, node.Height);
+            if (rectangleF.Contains(mousePos))
+            {
+                draggingNode = node;
+            }
+        }
+        if (draggingNode != null)
+        {
+            this.draggingNode.MouseDown(args, mousePos);
+        }
+    }
+    public void OnMouseMove(MouseEventArgs args)
+    {
+        PointF mousePos = new PointF((float)(args.ClientX - 282), (float)(args.ClientY - 145));
+        if (draggingNode != null)
+        {
+            this.draggingNode.MouseMove(args, mousePos);
+        }
+    }
+    public void OnMouseUp(MouseEventArgs args)
+    {
+        PointF mousePos = new PointF((float)(args.ClientX - 282), (float)(args.ClientY - 145));
+        if (draggingNode != null)
+        {
+            draggingNode.MouseUp(args);
+            draggingNode = null;
+        }
+    }
+
+    public PointF ConvertClienttoModel(PointF curPoint)
+    {
+        var clientRect = jsRuntime.InvokeVoidAsync("GetcanvasPosition", null);
+        PointF retPoint = PointF.Empty;
+
+        return retPoint;
+    }
+
+    [Parameter]
+    public List<Node> Nodes
+    {
+        get
+        {
+            return _nodes;
+        }
+        set
+        {
+            if (this.CompareValues(this._nodes, value))
+            {
+                this._nodes = value;
+                UpdateBindableProperties("nodes", _nodes);
+            }
+        }
+    }
+
+    public List<Node> _nodes = new List<Node>();
+    public List<Node> _internalNodes = new List<Node>();
+
+
+    internal Node CheckTagLevelNode(int id)
+    {
+        //foreach(Node node in Nodes)
+        //{
+        //    if(node._idCount == id)
+        //    {
+        //        return node;
+        //    }
+        //}
+        return null;
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        StateHasChanged();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            StateHasChanged();
+    }
+
+    public bool CompareValues(object oldValue, object newValue)
+    {
+        string NewValue = JsonSerializer.Serialize(newValue);
+        string OldValue = JsonSerializer.Serialize(oldValue);
+        return NewValue != OldValue;
+    }
+    private string SerialiazeBindableProp(Dictionary<string, object> bindableProp)
+    {
+        //JsonSerializerSettings settings = new JsonSerializerSettings();
+        //settings.Converters.Add(new StringEnumConverter());
+        return string.Empty;// JsonConvert.SerializeObject(bindableProp, Formatting.Indented, settings);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+    }
+
+    public void Add(Node node)
+    {
+        this._nodes.Add(node);
+        StateHasChanged();
+    }
+
+    public void UpdateBindableProperties(string key, object value)
+    {
+        //if (this.BindableProperties.ContainsKey(key))
+        //{
+        //    this.BindableProperties[key] = value;
+        //}
+        //else
+        //{
+        //    this.BindableProperties.Add(key, value);
+        //}
+    }
+
+    public string Save(string fileName)
+    {
+        System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
+        stopWatch.Start();
+        JsonSerializerOptions serializerOptions = new JsonSerializerOptions()
+        {
+            IgnoreNullValues = true,
+
+        };
+        serializerOptions.Converters.Add(new NodeRuntimeIgnoreConverter());
+        string jsonString = JsonSerializer.Serialize(this, serializerOptions);
+        stopWatch.Stop();
+        TimeSpan ts = stopWatch.Elapsed;
+
+        stopWatch.Start();
+        Newtonsoft.Json.JsonSerializerSettings settings = new Newtonsoft.Json.JsonSerializerSettings()
+        {
+            NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
+        };
+        //settings.Converters.Add(new NonFlagStringEnumConverter());
+        string ss = Newtonsoft.Json.JsonConvert.SerializeObject(this, settings);
+        stopWatch.Stop();
+        TimeSpan ts1 = stopWatch.Elapsed;
+        return jsonString;
+        //Create the stream to add object into it.
+        //System.IO.Stream ms = File.OpenWrite(fileName);
+        ////Format the object as Binary
+
+        //BinaryFormatter formatter = new BinaryFormatter();
+        ////It serialize the employee object
+        //formatter.Serialize(ms, Nodes);
+        //ms.Flush();
+        //ms.Close();
+        //ms.Dispose();
+    }
+    public void Load(string fileName)
+    {
+        JsonSerializerOptions serializerOptions = new JsonSerializerOptions()
+        {
+            IgnoreNullValues = true,
+        };
+        serializerOptions.Converters.Add(new NodeRuntimeIgnoreConverter());
+
+        Canvas diagram = JsonSerializer.Deserialize<Canvas>(fileName, serializerOptions);
+        Nodes = diagram.Nodes;
+        _constraints = diagram._constraints;
+        ////Format the object as Binary
+        //BinaryFormatter formatter = new BinaryFormatter();
+
+        ////Reading the file from the server
+        //FileStream fs = File.Open(fileName, FileMode.Open);
+
+        //List<Node> obj = (List<Node>)formatter.Deserialize(fs);
+        //Nodes = obj;
+        //fs.Flush();
+        //fs.Close();
+        //fs.Dispose();
+        //return obj;
+    }
+
+}
+

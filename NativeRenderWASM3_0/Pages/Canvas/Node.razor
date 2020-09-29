@@ -1,0 +1,33 @@
+﻿@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Web;
+@using System.Drawing;
+@using System.Text.Json.Serialization;
+@using System.ComponentModel;
+@using System.Collections.ObjectModel; 
+@using System.Collections.Specialized;
+
+@namespace NativeRenderWASM3_0
+
+@inherits ComponentBase;
+
+<g id="node_element" xmlns="http://www.w3.org/2000/svg">
+    <rect id="node" x="@X" y="@Y" width="@Width" height="@Height" fill="blue" stroke-width="5"></rect>
+
+    <CascadingValue Value="@this">
+        @ChildContent
+        @if (Annotations!=null && Annotations.Count > 0)
+        {
+            foreach (Annotation annotation in Annotations)
+            {
+                <Annotation Text="@annotation.Text" X="@annotation.X" Y="@annotation.Y"></Annotation>
+            }
+        }
+    </CascadingValue>
+</g>
+        
+@code {
+
+
+    
+}
+
